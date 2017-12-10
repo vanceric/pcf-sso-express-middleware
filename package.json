@@ -1,0 +1,25 @@
+{
+  "name": "pcf-sso-express-middleware",
+  "version": "0.0.1",
+  "description": "Express JS middleware for Pivotal Cloud Foundry Single Sign On",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha ./test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanceric/pcf-sso-express-middleware.git"
+  },
+  "author": "Vanceric",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vanceric/pcf-sso-express-middleware/issues"
+  },
+  "homepage": "https://github.com/vanceric/pcf-sso-express-middleware#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1",
+    "sinon": "^4.1.3",
+    "sinon-chai": "^2.14.0"
+  }
+}
