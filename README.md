@@ -4,7 +4,7 @@
 
 The purpose of this module is to wrap the process of interfacing with the Single Sign-On service provided for Pivotal Cloud Foundry into a middleware for express js. 
 
-For more information on PCF SSO visit: [PCF Dingle Sign-On Overview](http://docs.pivotal.io/p-identity/1-5/index.html)
+For more information on PCF SSO visit: [PCF Single Sign-On Overview](http://docs.pivotal.io/p-identity/1-5/index.html)
 
 ### Basic Usage Example:
 ```javascript
