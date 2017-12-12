@@ -1,12 +1,13 @@
 'use strict';
+const request = require('request');
+const simpleOauthModule = require('simple-oauth2');
 
 class sso_client {
   constructor(app, config) {
     this.ssoPaths = {
       tokenHost: '',
       authorizePath: '/oauth/authorize',
-      tokenPath: '/oauth/token',
-      userInfoPath: '/userinfo'
+      tokenPath: '/oauth/token'
     };
     this.credentials = {
       id: '',
@@ -16,7 +17,11 @@ class sso_client {
       clientHost: '',
       clientCallback: '/callback'
     };
+    this.userInfoPath = '/userinfo';
     this.scopes = ['openid'];
+    this.oauth2 = {};
+    this.authURI = {};
+    this.app = app;
   }
 
   setAppScopes(scopes) {
@@ -27,15 +32,11 @@ class sso_client {
     return this.scopes;
   }
 
-  getAppRoutes() {
-    return true;
-  }
-
   middleware(req, res, next) {
     if (req.session.authorized) {
       next();
     } else {
-      res.redirect(authURI);
+      res.redirect(this.authURI);
     }
   }
 
@@ -45,23 +46,36 @@ class sso_client {
         sso_client.parseVCAP(process.env.VCAP_APPLICATION),
         sso_client.parseVCAP(process.env.VCAP_SERVICES)
       );
+      this.oauth2 = simpleOauthModule.create({
+        client: this.credentials,
+        auth: this.ssoPaths
+      });
+      this.authURI = this.oauth2.authorizationCode.authorizeURL({
+        redirectURI: 'https://' + this.clientPaths.clientHost + '/callback'
+      });
+      this.app.get('/callback', (req, res, next) => {
+        this.callback(req, res);
+      });
     }
   }
 
   setPathsFromVCAP(VCAP_APP, VCAP_SVC) {
+    let services = sso_client.extractIdentity(VCAP_SVC);
+
+    this.ssoPaths.tokenHost = services.auth_domain;
+    this.credentials.id = services.client_id;
+    this.credentials.secret = services.client_secret;
+
     this.clientPaths.clientHost = `https://${
       VCAP_APP.uris ? VCAP_APP.uris[0] : '127.0.0.1'
     }`;
-    this.ssoPaths.tokenHost = extractIdentity(VCAP_SVC).auth_domain;
-    this.credentials.id = extractIdentity(VCAP_SVC).client_id;
-    this.credentials.secret = extractIdentity(VCAP_SVC).client_secret;
   }
 
-  callBack(req, res) {
+  callback(req, res) {
     const options = {
       code: req.query.code
     };
-    oauth2.authorizationCode.getToken(options, (error, result) => {
+    this.oauth2.authorizationCode.getToken(options, (error, result) => {
       if (error) {
         console.error('Access Token Error', error);
         return res.json('Authentication failed');
@@ -69,12 +83,10 @@ class sso_client {
 
       let scope = result.scope;
 
-      grabUserInfo(result.access_token)
-        .then(result => {
-          req.session.user = result;
-          if (scope === 'openid') {
-            req.session.authorize = true;
-          }
+      this.grabUserInfo(result.access_token)
+        .then(user => {
+          req.session.user = user;
+          req.session.authorized = true;
           return res.redirect('/');
         })
         .catch(err => {
@@ -84,13 +96,15 @@ class sso_client {
   }
 
   grabUserInfo(token) {
-    let { auth_domain, userInfoPath } = this.ssoPaths;
+    let { tokenHost } = this.ssoPaths;
+
     let options = {
-      url: auth_domain + userInfoPath,
+      url: tokenHost + this.userInfoPath,
       headers: {
         Authorization: `Bearer ${token}`
       }
     };
+
     return new Promise(function(resolve, reject) {
       request.get(options, (err, res, body) => {
         if (err) {
@@ -114,8 +128,8 @@ class sso_client {
 
   static extractIdentity(VCAP) {
     let response = {};
-    if (VCAP['p-identity'] && VCAP_SVC['p-identity'][0]) {
-      response = VCAP_SVC['p-identity'][0].credentials;
+    if (VCAP['p-identity'] && VCAP['p-identity'][0]) {
+      response = VCAP['p-identity'][0].credentials;
     }
     return response;
   }
