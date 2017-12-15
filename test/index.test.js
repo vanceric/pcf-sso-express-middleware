@@ -16,10 +16,14 @@ describe('pcf-sso-express-middleware exports a class', () => {
     req = {
       session: {}
     };
+    res = {
+      redirect: sinon.spy()
+    };
   });
 
   afterEach(() => {
     next.reset();
+    res.redirect.reset();
   });
 
   describe('to manage connecting a node js app to a PCF SSO Service', () => {
@@ -45,6 +49,14 @@ describe('pcf-sso-express-middleware exports a class', () => {
           req.session.authorized = true;
           sso_client.middleware(req, res, next);
           expect(next).to.have.been.called;
+        });
+      });
+
+      context('when the user session is not already authorized', () => {
+        it('calls res.redirect with the authURI', () => {
+          sso_client.authURI = 'testAuthURI';
+          sso_client.middleware(req, res, next);
+          expect(res.redirect).to.have.been.calledWith('testAuthURI');
         });
       });
     });
