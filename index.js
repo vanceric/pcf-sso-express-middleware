@@ -33,7 +33,7 @@ class sso_client {
   }
 
   middleware(req, res, next) {
-    if (req.session.authorized) {
+    if (req.session.authorized || this.bypass) {
       next();
     } else {
       res.redirect(this.authURI);
@@ -56,6 +56,8 @@ class sso_client {
       this.app.get('/callback', (req, res, next) => {
         this.callback(req, res);
       });
+    } else {
+      this.bypass = true;
     }
   }
 
