@@ -1,6 +1,7 @@
 'use strict';
 const request = require('request');
 const simpleOauthModule = require('simple-oauth2');
+const log = require('./lib/logger');
 
 class sso_client {
   constructor(app, config) {
@@ -79,7 +80,7 @@ class sso_client {
     };
     this.oauth2.authorizationCode.getToken(options, (error, result) => {
       if (error) {
-        console.error('Access Token Error', error);
+        log.httpError(req, error.context.error_description);
         return res.json('Authentication failed');
       }
 
