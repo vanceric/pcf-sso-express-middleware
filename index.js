@@ -52,7 +52,7 @@ class sso_client {
         auth: this.ssoPaths
       });
       this.authURI = this.oauth2.authorizationCode.authorizeURL({
-        redirectURI: 'https://' + this.clientPaths.clientHost + '/callback'
+        redirectURI: this.clientPaths.clientHost + '/callback'
       });
       this.app.get('/callback', (req, res, next) => {
         this.callback(req, res);
